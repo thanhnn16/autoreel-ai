@@ -16,9 +16,8 @@
                 :variant="currentStep >= step.id ? 'solid' : 'ghost'"
                 :color="currentStep >= step.id ? 'primary' : 'gray'"
                 :class="[
-                  'rounded-full w-12 h-12 flex items-center justify-center transition-all duration-300',
-                  currentStep === step.id ? 'ring-4 ring-primary-500/30 scale-110' : 'hover:scale-105',
-                  'group-hover:ring-2 group-hover:ring-primary-500/20'
+                  'rounded-full w-12 h-12 flex items-center justify-center',
+                  currentStep === step.id ? 'ring-2 ring-primary-500/30' : ''
                 ]"
                 @click="handleStepClick(step.id)"
               >
@@ -50,171 +49,172 @@
 
     <!-- Content with smooth transitions -->
     <div class="space-y-8">
-      <TransitionGroup name="fade">
-        <UCard
-          v-for="step in steps"
-          :key="step.id"
-          :ui="{ 
-            base: 'transition-all duration-300 transform',
-            body: { 
-              padding: 'p-6',
-              base: currentStep === step.id 
-                ? 'ring-2 ring-primary-500 bg-primary-50/50 scale-100 opacity-100' 
-                : 'scale-95 opacity-50'
-            }
-          }"
-        >
-          <div class="flex items-center gap-4 mb-4">
-            <UBadge
-              :color="currentStep === step.id ? 'primary' : 'gray'"
-              :variant="currentStep === step.id ? 'solid' : 'soft'"
-              size="lg"
-              class="w-8 h-8 rounded-full flex items-center justify-center"
-            >
-              {{ step.id }}
-            </UBadge>
-            <h2 class="text-2xl font-bold">{{ step.title }}</h2>
-          </div>
+      <ClientOnly>
+        <TransitionGroup name="fade">
+          <UCard
+            v-for="step in steps" 
+            v-show="currentStep === step.id"
+            :key="step.id"
+            :ui="{ 
+              base: 'transition-opacity duration-300',
+              body: { 
+                padding: 'p-6',
+                base: 'ring-1 ring-gray-200 bg-white'
+              }
+            }"
+          >
+            <div class="flex items-center gap-4 mb-4">
+              <UBadge
+                color="primary"
+                variant="solid"
+                size="lg"
+                class="w-8 h-8 rounded-full flex items-center justify-center"
+              >
+                {{ step.id }}
+              </UBadge>
+              <h2 class="text-2xl font-bold">{{ step.title }}</h2>
+            </div>
 
-          <div :class="{ 'opacity-50': currentStep !== step.id }">
-            <!-- Step 1 Content -->
-            <div v-if="step.id === 1">
-              <UFormGroup label="Story Source">
-                <URadioGroup v-model="storySource" :options="[
-                  { label: 'Generate New Story', value: 'generate' },
-                  { label: 'Use My Own Story', value: 'own' }
-                ]" />
-              </UFormGroup>
+            <div>
+              <!-- Step 1 Content -->
+              <div v-if="step.id === 1">
+                <UFormGroup label="Story Source">
+                  <URadioGroup v-model="storySource" :options="[
+                    { label: 'Generate New Story', value: 'generate' },
+                    { label: 'Use My Own Story', value: 'own' }
+                  ]" />
+                </UFormGroup>
 
-              <template v-if="storySource === 'generate'">
-                <UFormGroup label="Story Theme" class="mt-4">
+                <template v-if="storySource === 'generate'">
+                  <UFormGroup label="Story Theme" class="mt-4">
+                    <USelect
+                      v-model="storyTheme"
+                      :options="['Adventure', 'Romance', 'Mystery', 'Comedy', 'Drama']"
+                      placeholder="Select a theme"
+                    />
+                  </UFormGroup>
+                  <UFormGroup label="Story Description" class="mt-4">
+                    <UTextarea
+                      v-model="storyDescription"
+                      placeholder="Enter your story description or select options to generate one..."
+                      :rows="4"
+                    />
+                  </UFormGroup>
+                </template>
+
+                <template v-if="storySource === 'own'">
+                  <UFormGroup label="Your Story" class="mt-4">
+                    <UTextarea
+                      v-model="storyDescription"
+                      placeholder="Enter your story here..."
+                      :rows="6"
+                    />
+                  </UFormGroup>
+                </template>
+
+                <UFormGroup label="Duration" class="mt-4">
                   <USelect
-                    v-model="storyTheme"
-                    :options="['Adventure', 'Romance', 'Mystery', 'Comedy', 'Drama']"
-                    placeholder="Select a theme"
+                    v-model="duration"
+                    :options="['30 seconds', '1 minute', '2 minutes', '3 minutes']"
+                    placeholder="Select video duration"
                   />
                 </UFormGroup>
-                <UFormGroup label="Story Description" class="mt-4">
-                  <UTextarea
-                    v-model="storyDescription"
-                    placeholder="Enter your story description or select options to generate one..."
-                    :rows="4"
-                  />
-                </UFormGroup>
-              </template>
+              </div>
 
-              <template v-if="storySource === 'own'">
-                <UFormGroup label="Your Story" class="mt-4">
-                  <UTextarea
-                    v-model="storyDescription"
-                    placeholder="Enter your story here..."
-                    :rows="6"
-                  />
-                </UFormGroup>
-              </template>
-
-              <UFormGroup label="Duration" class="mt-4">
-                <USelect
-                  v-model="duration"
-                  :options="['30 seconds', '1 minute', '2 minutes', '3 minutes']"
-                  placeholder="Select video duration"
-                />
-              </UFormGroup>
-            </div>
-
-            <!-- Step 2 Content -->
-            <div v-if="step.id === 2">
-              <h2 class="text-2xl font-bold mb-4">Step 2: Image Style</h2>
-              <UCard class="p-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div v-for="style in imageStyles" :key="style.id" class="relative">
-                    <UCard :ui="{ body: { padding: 'p-0' } }">
-                      <img :src="style.preview" :alt="style.name" class="w-full h-48 object-cover rounded-t">
-                      <div class="p-4">
-                        <URadio v-model="selectedStyle" :value="style.id" :label="style.name" />
-                        <p class="text-sm text-gray-500 mt-2">{{ style.description }}</p>
-                      </div>
-                    </UCard>
-                  </div>
-                </div>
-              </UCard>
-            </div>
-
-            <!-- Step 3 Content -->
-            <div v-if="step.id === 3">
-              <h2 class="text-2xl font-bold mb-4">Step 3: Voice Selection</h2>
-              <UCard class="p-4">
-                <div class="space-y-4">
-                  <UFormGroup label="Voice Gender">
-                    <URadioGroup v-model="voiceGender" :options="['Male', 'Female']" />
-                  </UFormGroup>
-                  <UFormGroup label="Voice Age">
-                    <URadioGroup v-model="voiceAge" :options="['Young', 'Middle', 'Senior']" />
-                  </UFormGroup>
-                  <UFormGroup label="Available Voices" class="mt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <UCard v-for="voice in voices" :key="voice.id" class="p-4">
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <h4 class="font-medium">{{ voice.name }}</h4>
-                            <p class="text-sm text-gray-500">{{ voice.description }}</p>
-                          </div>
-                          <UButton icon="i-heroicons-play" color="primary" variant="soft" @click="playVoiceSample(voice.id)" />
+              <!-- Step 2 Content -->
+              <div v-if="step.id === 2">
+                <h2 class="text-2xl font-bold mb-4">Step 2: Image Style</h2>
+                <UCard class="p-4">
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div v-for="style in imageStyles" :key="style.id" class="relative">
+                      <UCard :ui="{ body: { padding: 'p-0' } }">
+                        <img :src="style.preview" :alt="style.name" class="w-full h-48 object-cover rounded-t">
+                        <div class="p-4">
+                          <URadio v-model="selectedStyle" :value="style.id" :label="style.name" />
+                          <p class="text-sm text-gray-500 mt-2">{{ style.description }}</p>
                         </div>
-                        <URadio v-model="selectedVoice" :value="voice.id" class="mt-2" />
                       </UCard>
                     </div>
-                  </UFormGroup>
-                </div>
-              </UCard>
-            </div>
-
-            <!-- Step 4 Content -->
-            <div v-if="step.id === 4">
-              <h2 class="text-2xl font-bold mb-4">Step 4: Preview</h2>
-              <UCard class="p-4">
-                <div class="space-y-4">
-                  <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                    <UIcon name="i-heroicons-play-circle" class="w-16 h-16 text-gray-400" />
                   </div>
+                </UCard>
+              </div>
+
+              <!-- Step 3 Content -->
+              <div v-if="step.id === 3">
+                <h2 class="text-2xl font-bold mb-4">Step 3: Voice Selection</h2>
+                <UCard class="p-4">
                   <div class="space-y-4">
-                    <h3 class="font-medium">Story Summary</h3>
-                    <UCard class="p-4 bg-gray-50">
-                      <ul class="space-y-2">
-                        <li><span class="font-medium">Theme:</span> {{ storyTheme }}</li>
-                        <li><span class="font-medium">Duration:</span> {{ duration }}</li>
-                        <li><span class="font-medium">Style:</span> {{ getStyleName(selectedStyle) }}</li>
-                        <li><span class="font-medium">Voice:</span> {{ getVoiceName(selectedVoice) }}</li>
-                      </ul>
-                    </UCard>
+                    <UFormGroup label="Voice Gender">
+                      <URadioGroup v-model="voiceGender" :options="['Male', 'Female']" />
+                    </UFormGroup>
+                    <UFormGroup label="Voice Age">
+                      <URadioGroup v-model="voiceAge" :options="['Young', 'Middle', 'Senior']" />
+                    </UFormGroup>
+                    <UFormGroup label="Available Voices" class="mt-4">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <UCard v-for="voice in voices" :key="voice.id" class="p-4">
+                          <div class="flex items-center justify-between">
+                            <div>
+                              <h4 class="font-medium">{{ voice.name }}</h4>
+                              <p class="text-sm text-gray-500">{{ voice.description }}</p>
+                            </div>
+                            <UButton icon="i-heroicons-play" color="primary" variant="soft" @click="playVoiceSample(voice.id)" />
+                          </div>
+                          <URadio v-model="selectedVoice" :value="voice.id" class="mt-2" />
+                        </UCard>
+                      </div>
+                    </UFormGroup>
                   </div>
-                </div>
-              </UCard>
-            </div>
+                </UCard>
+              </div>
 
-            <!-- Step 5 Content -->
-            <div v-if="step.id === 5">
-              <h2 class="text-2xl font-bold mb-4">Step 5: Download Video</h2>
-              <UCard class="p-4">
-                <div class="flex flex-col items-center space-y-4">
-                  <div class="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <UIcon name="i-heroicons-qr-code" class="w-32 h-32 text-gray-400" />
+              <!-- Step 4 Content -->
+              <div v-if="step.id === 4">
+                <h2 class="text-2xl font-bold mb-4">Step 4: Preview</h2>
+                <UCard class="p-4">
+                  <div class="space-y-4">
+                    <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                      <UIcon name="i-heroicons-play-circle" class="w-16 h-16 text-gray-400" />
+                    </div>
+                    <div class="space-y-4">
+                      <h3 class="font-medium">Story Summary</h3>
+                      <UCard class="p-4 bg-gray-50">
+                        <ul class="space-y-2">
+                          <li><span class="font-medium">Theme:</span> {{ storyTheme }}</li>
+                          <li><span class="font-medium">Duration:</span> {{ duration }}</li>
+                          <li><span class="font-medium">Style:</span> {{ getStyleName(selectedStyle) }}</li>
+                          <li><span class="font-medium">Voice:</span> {{ getVoiceName(selectedVoice) }}</li>
+                        </ul>
+                      </UCard>
+                    </div>
                   </div>
-                  <p class="text-center text-gray-600">Scan this QR code with your mobile device to download the video</p>
-                  <div class="flex gap-4">
-                    <UButton color="primary" icon="i-heroicons-arrow-down-tray">
-                      Download Directly
-                    </UButton>
-                    <UButton color="gray" icon="i-heroicons-arrow-path" @click="restartProcess">
-                      Create Another Video
-                    </UButton>
+                </UCard>
+              </div>
+
+              <!-- Step 5 Content -->
+              <div v-if="step.id === 5">
+                <h2 class="text-2xl font-bold mb-4">Step 5: Download Video</h2>
+                <UCard class="p-4">
+                  <div class="flex flex-col items-center space-y-4">
+                    <div class="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <UIcon name="i-heroicons-qr-code" class="w-32 h-32 text-gray-400" />
+                    </div>
+                    <p class="text-center text-gray-600">Scan this QR code with your mobile device to download the video</p>
+                    <div class="flex gap-4">
+                      <UButton color="primary" icon="i-heroicons-arrow-down-tray">
+                        Download Directly
+                      </UButton>
+                      <UButton color="gray" icon="i-heroicons-arrow-path" @click="restartProcess">
+                        Create Another Video
+                      </UButton>
+                    </div>
                   </div>
-                </div>
-              </UCard>
+                </UCard>
+              </div>
             </div>
-          </div>
-        </UCard>
-      </TransitionGroup>
+          </UCard>
+        </TransitionGroup>
+      </ClientOnly>
     </div>
 
     <!-- Improved Navigation Buttons -->
@@ -224,7 +224,6 @@
         @click="handlePrevious"
         icon="i-heroicons-arrow-left"
         variant="soft"
-        class="transition-transform hover:scale-105"
       >
         Previous
       </UButton>
@@ -234,7 +233,6 @@
           color="gray"
           icon="i-heroicons-arrow-path"
           @click="restartProcess"
-          class="transition-transform hover:scale-105"
         >
           Start Over
         </UButton>
@@ -244,7 +242,6 @@
           icon="i-heroicons-arrow-right"
           color="primary"
           :disabled="!canProceed"
-          class="transition-transform hover:scale-105"
         >
           Next
         </UButton>
@@ -360,17 +357,12 @@ const handleStepClick = (stepId: number) => {
 .fade-move,
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
+  transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translateX(30px);
-}
-
-.fade-leave-active {
-  position: absolute;
 }
 </style>
 
