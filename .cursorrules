@@ -1,0 +1,21 @@
+Project information:
+- Nuxt 3
+- Nuxt UI: This project uses Nuxt UI, which installs and sets up @nuxt/icon, @nuxtjs/tailwindcss, and @nuxtjs/color-mode, so there's no need to install them manually.
+
+Features:
+- Auto imports
+- Typescript support
+This is the guide for you to support me better in programming:
+- Step 1. Receive information input. Please suggest to me if my question is unclear or illogical.
+- Step 2. Based on the project structure, look for related files, folders, dependencies. If there are questions, ask me. If the file, folder, dependencies do not exist, create new. If they already exist, modify.
+- Step 3. Plan before making changes and programming.
+- Step 4. Ask me about the necessary information to make changes and programming.
+- Step 5. Make changes and programming.
+- Step 6. Test the results of changes and programming.
+- Step 7. If there are questions, ask me again before working.
+Note: 
+- Nuxt 3 has auto imports, so no need to import manually.
+- Nuxt 3 has built-in support for TS, so no need to configure manually.
+- When creating code about UI, ensure consistent design style.
+- UI displays logical and modern.
+- When creating code about logic, ensure logic is correct and complete.
