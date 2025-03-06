@@ -1,249 +1,188 @@
 <template>
-  <div class="container mx-auto py-8 px-4">
-    <!-- Title and Slogan -->
-    <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold mb-4">🚀 AutoReel AI</h1>
-      <p class="text-xl text-gray-600">Your Story, Your Style, Your Reel 🎥</p>
+  <div class="container mx-auto py-6 px-4 lg:px-6 max-w-4xl">
+    <!-- Header tối giản -->
+    <div class="text-center mb-8 space-y-2">
+      <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+        AutoReel AI
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 text-sm">
+        Your Story, Your Style, Your Reel
+      </p>
     </div>
 
-    <!-- Stepper with improved UX -->
-    <div class="mb-12 relative">
-      <div class="flex items-center justify-between">
-        <template v-for="(step, index) in steps" :key="step.id">
-          <div class="flex items-center relative group">
-            <UTooltip :text="step.title">
-              <UButton
-                :variant="currentStep >= step.id ? 'solid' : 'ghost'"
-                :color="currentStep >= step.id ? 'primary' : 'gray'"
-                :class="[
-                  'rounded-full w-12 h-12 flex items-center justify-center',
-                  currentStep === step.id ? 'ring-2 ring-primary-500/30' : ''
-                ]"
-                @click="handleStepClick(step.id)"
-              >
-                <span v-if="currentStep > step.id" class="text-white">
-                  <UIcon name="i-heroicons-check" class="w-5 h-5" />
-                </span>
-                <span v-else>{{ step.id }}</span>
-              </UButton>
-            </UTooltip>
-            <p class="ml-3 font-medium transition-all duration-300" :class="{
-              'text-primary-500 scale-105': currentStep >= step.id,
-              'text-gray-500': currentStep < step.id,
-              'hidden md:block': true
-            }">
-              {{ step.title }}
-            </p>
-          </div>
-          <div v-if="index < steps.length - 1" class="flex-1 mx-4">
-            <div class="h-1 rounded-full bg-gray-200 relative">
-              <div
-                class="absolute top-0 left-0 h-full bg-primary-500 rounded-full transition-all duration-500"
-                :style="{ width: currentStep > step.id ? '100%' : '0%' }"
-              />
-            </div>
-          </div>
-        </template>
+    <!-- Stepper dạng progress bar -->
+    <div class="mb-8">
+      <div class="relative pt-4">
+        <div class="flex justify-between text-sm mb-2 text-gray-500 dark:text-gray-400">
+          <span>Step {{ currentStep }} of 5</span>
+          <span>{{ steps[currentStep - 1].title }}</span>
+        </div>
+        <div class="h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-800">
+          <div 
+            class="h-full bg-primary-500 transition-all duration-300"
+            :style="{ width: `${(currentStep - 1) * 25}%` }"
+          ></div>
+        </div>
       </div>
     </div>
 
-    <!-- Content with smooth transitions -->
-    <div class="space-y-8">
+    <!-- Nội dung form -->
+    <div class="relative">
       <ClientOnly>
-        <TransitionGroup name="fade">
-          <UCard
-            v-for="step in steps" 
-            v-show="currentStep === step.id"
-            :key="step.id"
-            :ui="{ 
-              base: 'transition-opacity duration-300',
-              body: { 
-                padding: 'p-6',
-                base: 'ring-1 ring-gray-200 bg-white'
-              }
-            }"
+        <!-- Step 1: Tối ưu form layout -->
+        <div v-if="currentStep === 1" class="space-y-6">
+          <UFormGroup 
+            label="Story Title" 
+            class="space-y-1"
+            name="title"
+            :rules="[{ 
+              required: true, 
+              min: 4, 
+              message: 'Title must be at least 4 characters',
+              validator: (_, value) => value.trim().length >= 4 
+            }]"
           >
-            <div class="flex items-center gap-4 mb-4">
-              <UBadge
-                color="primary"
-                variant="solid"
-                size="lg"
-                class="w-8 h-8 rounded-full flex items-center justify-center"
+            <UInput 
+              v-model="title"
+              placeholder="My Awesome Story"
+              icon="i-heroicons-book-open"
+              size="lg"
+              autofocus
+              :trailing="title.length > 0 && title.trim().length < 4"
+            >
+              <template #trailing>
+                <UTooltip text="Minimum 4 non-whitespace characters">
+                  <UIcon name="i-heroicons-exclamation-circle" class="w-5 h-5 text-red-500" />
+                </UTooltip>
+              </template>
+            </UInput>
+            <div class="text-xs text-gray-500 mt-1">Min. 4 characters</div>
+          </UFormGroup>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <UFormGroup 
+              label="Video Duration"
+              name="duration"
+              :rules="[{ required: true, message: 'Please select duration' }]"
+            >
+              <USelect
+                v-model="duration"
+                :options="durationOptions"
+                placeholder="Select duration"
+                icon="i-heroicons-clock"
+              />
+            </UFormGroup>
+
+            <UFormGroup 
+              label="Genres (max 3)"
+              name="genres"
+              :rules="[{ 
+                validator: (_unused: any, value: string[]) => value.length >= 1 && value.length <= 3,
+                message: 'Select 1-3 genres' 
+              }]"
+            >
+              <USelectMenu
+                v-model="selectedGenres"
+                :options="storyGenres"
+                multiple
+                :popper="{ placement: 'bottom-end' }"
               >
-                {{ step.id }}
-              </UBadge>
-              <h2 class="text-2xl font-bold">{{ step.title }}</h2>
-            </div>
-
-            <div>
-              <!-- Step 1 Content -->
-              <div v-if="step.id === 1">
-                <UFormGroup label="Story Source">
-                  <URadioGroup v-model="storySource" :options="[
-                    { label: 'Generate New Story', value: 'generate' },
-                    { label: 'Use My Own Story', value: 'own' }
-                  ]" />
-                </UFormGroup>
-
-                <template v-if="storySource === 'generate'">
-                  <UFormGroup label="Story Theme" class="mt-4">
-                    <USelect
-                      v-model="storyTheme"
-                      :options="['Adventure', 'Romance', 'Mystery', 'Comedy', 'Drama']"
-                      placeholder="Select a theme"
-                    />
-                  </UFormGroup>
-                  <UFormGroup label="Story Description" class="mt-4">
-                    <UTextarea
-                      v-model="storyDescription"
-                      placeholder="Enter your story description or select options to generate one..."
-                      :rows="4"
-                    />
-                  </UFormGroup>
+                <template #label>
+                  <span v-if="selectedGenres.length" class="flex gap-1 flex-wrap">
+                    <UBadge 
+                      v-for="genre in selectedGenres"
+                      :key="genre"
+                      color="gray"
+                      variant="subtle"
+                      class="capitalize"
+                    >
+                      {{ genre }}
+                    </UBadge>
+                  </span>
+                  <span v-else class="text-gray-400">Select genres</span>
                 </template>
+              </USelectMenu>
+            </UFormGroup>
+          </div>
 
-                <template v-if="storySource === 'own'">
-                  <UFormGroup label="Your Story" class="mt-4">
-                    <UTextarea
-                      v-model="storyDescription"
-                      placeholder="Enter your story here..."
-                      :rows="6"
-                    />
-                  </UFormGroup>
-                </template>
+          <UFormGroup 
+            label="Story Content"
+            name="description"
+            :rules="[{ required: true, min: 20, message: 'Minimum 20 characters required' }]"
+          >
+            <UTextarea
+              v-model="storyDescription"
+              placeholder="Once upon a time..."
+              :rows="5"
+              resize
+              class="font-mono text-sm"
+              :trailing="storyDescription.length > 0 && storyDescription.length < 20"
+            >
+              <template #trailing>
+                <UIcon name="i-heroicons-exclamation-circle" class="w-5 h-5 text-red-500" />
+              </template>
+            </UTextarea>
+          </UFormGroup>
+        </div>
 
-                <UFormGroup label="Duration" class="mt-4">
-                  <USelect
-                    v-model="duration"
-                    :options="['30 seconds', '1 minute', '2 minutes', '3 minutes']"
-                    placeholder="Select video duration"
+        <!-- Step 2: Tối ưu visual style selection -->
+        <div v-else-if="currentStep === 2" class="grid gap-4 sm:grid-cols-2">
+          <div 
+            v-for="style in imageStyleOptions"
+            :key="style.id"
+            class="group relative cursor-pointer"
+            @click="toggleImageStyle(style.id)"
+          >
+            <div class="relative aspect-video overflow-hidden rounded-xl border-2 transition-all"
+              :class="imageStyles.includes(style.id) 
+                ? 'border-primary-500 ring-4 ring-primary-100 dark:ring-primary-900/30'
+                : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'">
+              <img
+                :src="style.preview"
+                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                alt="Style preview"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
+                <div class="flex h-full items-end justify-between">
+                  <span class="font-medium text-white">{{ style.name }}</span>
+                  <UIcon 
+                    name="i-heroicons-check-circle" 
+                    class="h-6 w-6 text-primary-500 transition-transform"
+                    :class="imageStyles.includes(style.id) ? 'scale-100' : 'scale-0'"
                   />
-                </UFormGroup>
-              </div>
-
-              <!-- Step 2 Content -->
-              <div v-if="step.id === 2">
-                <h2 class="text-2xl font-bold mb-4">Step 2: Image Style</h2>
-                <UCard class="p-4">
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div v-for="style in imageStyles" :key="style.id" class="relative">
-                      <UCard :ui="{ body: { padding: 'p-0' } }">
-                        <img :src="style.preview" :alt="style.name" class="w-full h-48 object-cover rounded-t">
-                        <div class="p-4">
-                          <URadio v-model="selectedStyle" :value="style.id" :label="style.name" />
-                          <p class="text-sm text-gray-500 mt-2">{{ style.description }}</p>
-                        </div>
-                      </UCard>
-                    </div>
-                  </div>
-                </UCard>
-              </div>
-
-              <!-- Step 3 Content -->
-              <div v-if="step.id === 3">
-                <h2 class="text-2xl font-bold mb-4">Step 3: Voice Selection</h2>
-                <UCard class="p-4">
-                  <div class="space-y-4">
-                    <UFormGroup label="Voice Gender">
-                      <URadioGroup v-model="voiceGender" :options="['Male', 'Female']" />
-                    </UFormGroup>
-                    <UFormGroup label="Voice Age">
-                      <URadioGroup v-model="voiceAge" :options="['Young', 'Middle', 'Senior']" />
-                    </UFormGroup>
-                    <UFormGroup label="Available Voices" class="mt-4">
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <UCard v-for="voice in voices" :key="voice.id" class="p-4">
-                          <div class="flex items-center justify-between">
-                            <div>
-                              <h4 class="font-medium">{{ voice.name }}</h4>
-                              <p class="text-sm text-gray-500">{{ voice.description }}</p>
-                            </div>
-                            <UButton icon="i-heroicons-play" color="primary" variant="soft" @click="playVoiceSample(voice.id)" />
-                          </div>
-                          <URadio v-model="selectedVoice" :value="voice.id" class="mt-2" />
-                        </UCard>
-                      </div>
-                    </UFormGroup>
-                  </div>
-                </UCard>
-              </div>
-
-              <!-- Step 4 Content -->
-              <div v-if="step.id === 4">
-                <h2 class="text-2xl font-bold mb-4">Step 4: Preview</h2>
-                <UCard class="p-4">
-                  <div class="space-y-4">
-                    <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                      <UIcon name="i-heroicons-play-circle" class="w-16 h-16 text-gray-400" />
-                    </div>
-                    <div class="space-y-4">
-                      <h3 class="font-medium">Story Summary</h3>
-                      <UCard class="p-4 bg-gray-50">
-                        <ul class="space-y-2">
-                          <li><span class="font-medium">Theme:</span> {{ storyTheme }}</li>
-                          <li><span class="font-medium">Duration:</span> {{ duration }}</li>
-                          <li><span class="font-medium">Style:</span> {{ getStyleName(selectedStyle) }}</li>
-                          <li><span class="font-medium">Voice:</span> {{ getVoiceName(selectedVoice) }}</li>
-                        </ul>
-                      </UCard>
-                    </div>
-                  </div>
-                </UCard>
-              </div>
-
-              <!-- Step 5 Content -->
-              <div v-if="step.id === 5">
-                <h2 class="text-2xl font-bold mb-4">Step 5: Download Video</h2>
-                <UCard class="p-4">
-                  <div class="flex flex-col items-center space-y-4">
-                    <div class="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <UIcon name="i-heroicons-qr-code" class="w-32 h-32 text-gray-400" />
-                    </div>
-                    <p class="text-center text-gray-600">Scan this QR code with your mobile device to download the video</p>
-                    <div class="flex gap-4">
-                      <UButton color="primary" icon="i-heroicons-arrow-down-tray">
-                        Download Directly
-                      </UButton>
-                      <UButton color="gray" icon="i-heroicons-arrow-path" @click="restartProcess">
-                        Create Another Video
-                      </UButton>
-                    </div>
-                  </div>
-                </UCard>
+                </div>
               </div>
             </div>
-          </UCard>
-        </TransitionGroup>
+          </div>
+        </div>
       </ClientOnly>
     </div>
 
-    <!-- Improved Navigation Buttons -->
-    <div class="flex justify-between mt-8">
-      <UButton
-        v-if="currentStep > 1"
-        @click="handlePrevious"
-        icon="i-heroicons-arrow-left"
-        variant="soft"
-      >
-        Previous
-      </UButton>
-      <div class="flex gap-4 ml-auto">
+    <!-- Navigation tối giản -->
+    <div class="sticky bottom-0 mt-8 bg-white/90 backdrop-blur-lg dark:bg-gray-900/90">
+      <div class="flex items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
         <UButton
-          v-if="currentStep === 5"
+          v-if="currentStep > 1"
+          @click="handlePrevious"
+          icon="i-heroicons-arrow-small-left"
           color="gray"
-          icon="i-heroicons-arrow-path"
-          @click="restartProcess"
+          variant="ghost"
+          :disabled="isSubmitting"
         >
-          Start Over
+          Back
         </UButton>
+
         <UButton
           v-if="currentStep < 5"
           @click="handleNext"
-          icon="i-heroicons-arrow-right"
-          color="primary"
+          :loading="isSubmitting"
           :disabled="!canProceed"
+          color="primary"
+          variant="solid"
+          class="ml-auto"
+          :trailing-icon="currentStep === 4 ? undefined : 'i-heroicons-arrow-small-right'"
         >
-          Next
+          {{ currentStep === 4 ? 'Generate Now' : 'Continue' }}
         </UButton>
       </div>
     </div>
@@ -251,6 +190,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
+// Thêm biến isSubmitting
+const isSubmitting = ref(false)
+
 const currentStep = ref<number>(1)
 
 interface Step {
@@ -259,78 +203,96 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: 1, title: 'Story Input' },
-  { id: 2, title: 'Image Style' },
-  { id: 3, title: 'Voice Selection' },
+  { id: 1, title: 'Story Details' },
+  { id: 2, title: 'Visual Style' },
+  { id: 3, title: 'Voice' },
   { id: 4, title: 'Preview' },
-  { id: 5, title: 'Download' }
+  { id: 5, title: 'Generate Video' }
 ]
 
 // Step 1 data
-const storySource = ref<'generate' | 'own'>('generate')
-const storyTheme = ref<string>('')
-const storyDescription = ref<string>('')
-const duration = ref<string>('')
+const title = ref('')
+const storyDescription = ref('')
+const duration = ref('')
 
 // Step 2 data
-const selectedStyle = ref('')
-const imageStyles = [
-  { id: 'anime', name: 'Anime', description: 'Japanese animation style', preview: '/styles/anime.jpg' },
-  { id: '3d', name: '3D Animation', description: 'Modern 3D rendered style', preview: '/styles/3d.jpg' },
-  { id: 'realistic', name: 'Realistic', description: 'Photorealistic style', preview: '/styles/realistic.jpg' }
+const imageStyles = ref<string[]>([])
+
+// Thêm dữ liệu thể loại
+const storyGenres = [
+  'Kinh dị', 'Viễn tưởng', 'Huyền bí',
+  'Lãng mạn', 'Hành động', 'Giả tưởng',
+  'Trinh thám', 'Lịch sử', 'Hài hước'
 ]
 
-// Step 3 data
-const voiceGender = ref('Male')
-const voiceAge = ref('Young')
-const selectedVoice = ref('')
-const voices = [
-  { id: 'voice1', name: 'Alex', description: 'Clear and professional male voice' },
-  { id: 'voice2', name: 'Emma', description: 'Warm and friendly female voice' },
-  { id: 'voice3', name: 'James', description: 'Deep and authoritative male voice' },
-  { id: 'voice4', name: 'Sophie', description: 'Soft and gentle female voice' }
-]
+// Sửa các biến dữ liệu
+const selectedGenres = ref<string[]>([])
 
-// Helper functions
-const getStyleName = (id: string) => {
-  return imageStyles.find(style => style.id === id)?.name || ''
+// Thêm mảng imageStyleOptions
+interface ImageStyle {
+  id: string
+  name: string
+  preview: string
 }
 
-const getVoiceName = (id: string) => {
-  return voices.find(voice => voice.id === id)?.name || ''
-}
+const imageStyleOptions = ref<ImageStyle[]>([
+  { 
+    id: 'cinematic', 
+    name: 'Cinematic', 
+    preview: 'https://placehold.co/600x400?text=Cinematic+Style' 
+  },
+  { 
+    id: 'minimal', 
+    name: 'Minimal', 
+    preview: 'https://placehold.co/600x400?text=Minimal+Style' 
+  },
+  { 
+    id: 'animated', 
+    name: 'Animated', 
+    preview: 'https://placehold.co/600x400?text=Animated+Style' 
+  },
+  { 
+    id: 'documentary', 
+    name: 'Documentary', 
+    preview: 'https://placehold.co/600x400?text=Doc+Style' 
+  },
+])
 
-const playVoiceSample = (voiceId: string) => {
-  // TODO: Implement voice sample playback
-  console.log('Playing voice sample:', voiceId)
-}
+// Sửa options duration
+const durationOptions = ['30 giây', '60 giây', '90 giây']
 
-// Add new function to restart the process
-const restartProcess = () => {
-  currentStep.value = 1
-  storySource.value = 'generate'
-  storyTheme.value = ''
-  storyDescription.value = ''
-  duration.value = ''
-  selectedStyle.value = ''
-  voiceGender.value = 'Male'
-  voiceAge.value = 'Young'
-  selectedVoice.value = ''
-}
-
-// Add validation logic
+// Cập nhật validation
 const canProceed = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return storyDescription.value.length > 0 && duration.value
+      return (
+        title.value.trim().length >= 4 &&
+        storyDescription.value.trim().length >= 20 &&
+        duration.value !== '' &&
+        selectedGenres.value.length >= 1 &&
+        selectedGenres.value.length <= 3
+      )
     case 2:
-      return selectedStyle.value
+      return imageStyles.value.length >= 1
     case 3:
-      return selectedVoice.value
-    default:
+      // Thêm validation cho step 3 nếu cần
       return true
+    case 4:
+      // Thêm validation cho step 4 nếu cần
+      return true
+    default:
+      return false
   }
 })
+
+// Thêm hàm toggle image style
+const toggleImageStyle = (styleId: string) => {
+  if (imageStyles.value.includes(styleId)) {
+    imageStyles.value = imageStyles.value.filter(id => id !== styleId)
+  } else if (imageStyles.value.length < 2) {
+    imageStyles.value = [...imageStyles.value, styleId]
+  }
+}
 
 // Enhanced navigation functions
 const handleNext = () => {
@@ -353,21 +315,22 @@ const handleStepClick = (stepId: number) => {
 }
 </script>
 
-<style scoped>
-.fade-move,
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>
-
 <style>
-.container {
-  max-width: 1200px;
+/* Tối ưu animation */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-bottom: 120px;
+  }
 }
 </style>
